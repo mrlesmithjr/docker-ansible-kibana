@@ -1,0 +1,61 @@
+---
+- hosts: localhost
+  connection: local
+  become: true
+  vars:
+    - gosu_ver: '1.9'
+    - kibana_ver: '4.5'
+    - tini_ver: 'v0.9.0'
+  tasks:
+    - name: Installing apt-transport-https
+      apt:
+        name: "apt-transport-https"
+        state: "present"
+
+    - name: Installing ca-certificates
+      apt:
+        name: "ca-certificates"
+        state: "latest"
+
+    - name: Installing dumb-init
+      apt:
+        deb: "https://github.com/Yelp/dumb-init/releases/download/v1.0.2/dumb-init_1.0.2_amd64.deb"
+
+    - name: Installing gosu
+      get_url:
+        url: "https://github.com/tianon/gosu/releases/download/{{ gosu_ver }}/gosu-amd64"
+        dest: "/usr/local/bin/gosu"
+        mode: 0755
+
+    - name: Installing tini
+      get_url:
+        url: "https://github.com/krallin/tini/releases/download/{{ tini_ver }}/tini"
+        dest: "/usr/local/bin/tini"
+        mode: 0755
+
+    - name: Adding Elasticsearch Repo Key
+      apt_key:
+        url: "https://packages.elastic.co/GPG-KEY-elasticsearch"
+        state: "present"
+
+    - name: Adding Kibana Repo
+      apt_repository:
+        repo: "deb http://packages.elastic.co/kibana/{{ kibana_ver }}/debian stable main"
+
+    - name: Installing Kibana
+      apt:
+        name: "kibana"
+        state: "present"
+        install_recommends: no
+
+    - name: Ensuring Kibana Folder Permissions
+      file:
+        path: "/opt/kibana"
+        owner: "kibana"
+        group: "kibana"
+
+    - name: Setting Default elasticsearch.url
+      replace:
+        dest: "/opt/kibana/config/kibana.yml"
+        regexp: "^# elasticsearch.url: \"http://localhost:9200\""
+        replace: "elasticsearch.url: \"http://elasticsearch:9200\""
