@@ -4,7 +4,8 @@
   become: true
   vars:
     - gosu_ver: '1.9'
-    - kibana_ver: '4.5'
+    - kibana_major_ver: '4.5'
+    - kibana_ver: '4.5.3'
     - tini_ver: 'v0.9.0'
   tasks:
     - name: Installing apt-transport-https
@@ -40,11 +41,11 @@
 
     - name: Adding Kibana Repo
       apt_repository:
-        repo: "deb http://packages.elastic.co/kibana/{{ kibana_ver }}/debian stable main"
+        repo: "deb http://packages.elastic.co/kibana/{{ kibana_major_ver }}/debian stable main"
 
     - name: Installing Kibana
       apt:
-        name: "kibana"
+        name: "kibana={{ kibana_ver }}"
         state: "present"
         install_recommends: no
 
