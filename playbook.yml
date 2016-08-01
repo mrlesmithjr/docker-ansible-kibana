@@ -4,8 +4,8 @@
   become: true
   vars:
     - gosu_ver: '1.9'
-    - kibana_major_ver: '4.4'
-    - kibana_ver: '4.4.0'
+    - kibana_dl_file: 'kibana-{{ kibana_ver }}-linux-x64'
+    - kibana_ver: '4.3.3'
     - tini_ver: 'v0.9.0'
   tasks:
     - name: Installing apt-transport-https
@@ -34,20 +34,37 @@
         dest: "/usr/local/bin/tini"
         mode: 0755
 
-    - name: Adding Elasticsearch Repo Key
-      apt_key:
-        url: "https://packages.elastic.co/GPG-KEY-elasticsearch"
-        state: "present"
+    - name: Ensuring Kibana Group Exists
+      group:
+        name: "kibana"
 
-    - name: Adding Kibana Repo
-      apt_repository:
-        repo: "deb http://packages.elastic.co/kibana/{{ kibana_major_ver }}/debian stable main"
-
-    - name: Installing Kibana
-      apt:
-        name: "kibana={{ kibana_ver }}"
+    - name: Ensuring Kibana User Exists
+      user:
+        append: yes
+        groups: "kibana"
+        home: "/var/lib/kibana"
+        name: "kibana"
+        shell: "/bin/false"
         state: "present"
-        install_recommends: no
+        system: yes
+
+    - name: Downloading Kibana
+      get_url:
+        url: "https://download.elastic.co/kibana/kibana/{{ kibana_dl_file }}.tar.gz"
+        dest: "/opt/{{ kibana_dl_file }}.tar.gz"
+
+    - name: Extracting Kibana
+      unarchive:
+        src: "/opt/{{ kibana_dl_file }}.tar.gz"
+        dest: "/opt/"
+        copy: no
+        owner: "kibana"
+        group: "kibana"
+
+    - name: Moving {{ kibana_dl_file }} To Kibana
+      command: "mv {{ kibana_dl_file }} kibana"
+      args:
+        chdir: "/opt"
 
     - name: Ensuring Kibana Folder Permissions
       file:
