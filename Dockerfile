@@ -4,7 +4,7 @@ MAINTAINER Larry Smith Jr. <mrlesmithjr@gmail.com>
 
 # Define Kibana version to install
 ENV KIBANA_MAJOR_VER="4.6" \
-    KIBANA_VER="4.6.0"
+    KIBANA_VER="4.6.1"
 
 # Copy Ansible Related Files
 COPY config/ansible/ /
