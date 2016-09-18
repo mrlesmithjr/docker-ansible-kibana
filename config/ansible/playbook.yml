@@ -3,22 +3,19 @@
   connection: local
   become: true
   vars:
-    - gosu_ver: '1.9'
-    - tini_ver: 'v0.9.0'
+    gosu_ver: '1.9'
+    kibana_dl_file: 'kibana-{{ kibana_ver }}-linux-x86_64.tar.gz'
+    kibana_url: 'https://download.elastic.co/kibana/kibana'
+    tini_ver: 'v0.9.0'
   tasks:
-    - name: Installing apt-transport-https
-      apt:
-        name: "apt-transport-https"
-        state: "present"
+    - name: Updating APK Cache
+      apk:
+        update_cache: yes
 
     - name: Installing ca-certificates
-      apt:
+      apk:
         name: "ca-certificates"
-        state: "latest"
-
-    - name: Installing dumb-init
-      apt:
-        deb: "https://github.com/Yelp/dumb-init/releases/download/v1.0.2/dumb-init_1.0.2_amd64.deb"
+        state: "present"
 
     - name: Installing gosu
       get_url:
@@ -32,29 +29,75 @@
         dest: "/usr/local/bin/tini"
         mode: 0755
 
-    - name: Adding Elasticsearch Repo Key
-      apt_key:
-        url: "https://packages.elastic.co/GPG-KEY-elasticsearch"
+    - name: Installing Kibana Pre-Reqs
+      apk:
+        name: "{{ item }}"
         state: "present"
+      with_items:
+        - 'nodejs'
+        - 'tar'
 
-    - name: Adding Kibana Repo
-      apt_repository:
-        repo: "deb http://packages.elastic.co/kibana/{{ kibana_major_ver }}/debian stable main"
+    - name: Checking For Kibana User
+      shell: "cut -d: -f1 /etc/passwd"
+      register: "users_list"
 
-    - name: Installing Kibana
-      apt:
-        name: "kibana={{ kibana_ver }}"
-        state: "present"
-        install_recommends: no
+    - name: Creating Kibana User
+      command: "adduser -DH -s /sbin/nologin kibana"
+      when: users_list.stdout.find('kibana') != 1
 
-    - name: Ensuring Kibana Folder Permissions
+    - name: Ensuring Folders Exist
       file:
-        path: "/opt/kibana"
+        path: "{{ item }}"
+        state: "directory"
+      with_items:
+        - '/opt'
+
+    - name: Downloading Kibana
+      get_url:
+        url: "{{ kibana_url }}/{{ kibana_dl_file }}"
+        dest: "/opt/{{ kibana_dl_file }}"
+
+    - name: Extracting Kibana
+      unarchive:
+        src: "/opt/{{ kibana_dl_file }}"
+        dest: "/opt"
         owner: "kibana"
         group: "kibana"
+        copy: no
+
+    - name: Creating Kibana Symlink
+      file:
+        src: "/opt/kibana-{{ kibana_ver }}-linux-x86_64"
+        dest: "/opt/kibana"
+        state: "link"
 
     - name: Setting Default elasticsearch.url
       replace:
         dest: "/opt/kibana/config/kibana.yml"
         regexp: "^# elasticsearch.url: \"http://localhost:9200\""
         replace: "elasticsearch.url: \"http://elasticsearch:9200\""
+
+    - name: Cleaning Up
+      file:
+        path: "{{ item }}"
+        state: "absent"
+      with_items:
+        - '/opt/{{ kibana_dl_file }}'
+        - '/opt/kibana/node/'
+
+    - name: Configuring Kibana Folders
+      file:
+        path: "{{ item }}"
+        state: "directory"
+        owner: "kibana"
+        group: 'kibana'
+      with_items:
+        - '/opt/kibana/node/bin'
+
+    - name: Creating NodeJS Symlink
+      file:
+        src: "/usr/bin/node"
+        dest: "/opt/kibana/node/bin/node"
+        state: "link"
+        owner: "kibana"
+        group: "kibana"

@@ -1,4 +1,4 @@
-FROM mrlesmithjr/ubuntu-ansible:16.04
+FROM mrlesmithjr/alpine-ansible
 
 MAINTAINER Larry Smith Jr. <mrlesmithjr@gmail.com>
 
@@ -12,9 +12,8 @@ COPY config/ansible/ /
 # Run Ansible playbook
 RUN ansible-playbook -i "localhost," -c local /playbook.yml \
     --extra-vars "kibana_major_ver=$KIBANA_MAJOR_VER kibana_ver=$KIBANA_VER" && \
-    apt-get -y clean && \
-    apt-get -y autoremove && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    rm -rf /tmp/* && \
+    rm -rf /var/cache/apk/*
 
 # Copy Docker Entrypoint
 COPY docker-entrypoint.sh /
@@ -28,4 +27,4 @@ ENV PATH /opt/kibana/bin:$PATH
 EXPOSE 5601
 
 # Container start-up
-CMD ["kibana"]
+CMD ["/opt/kibana/bin/kibana"]
