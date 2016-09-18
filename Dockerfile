@@ -3,8 +3,8 @@ FROM mrlesmithjr/alpine-ansible
 MAINTAINER Larry Smith Jr. <mrlesmithjr@gmail.com>
 
 # Define Kibana version to install
-ENV KIBANA_MAJOR_VER="4.6" \
-    KIBANA_VER="4.6.1"
+ENV KIBANA_MAJOR_VER="4.1" \
+    KIBANA_VER="4.1.11"
 
 # Copy Ansible Related Files
 COPY config/ansible/ /
