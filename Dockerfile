@@ -27,4 +27,4 @@ ENV PATH /opt/kibana/bin:$PATH
 EXPOSE 5601
 
 # Container start-up
-CMD ["/opt/kibana/bin/kibana"]
+CMD ["kibana"]
