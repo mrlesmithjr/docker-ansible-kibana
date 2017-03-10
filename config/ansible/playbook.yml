@@ -5,7 +5,7 @@
   vars:
     gosu_ver: '1.9'
     kibana_dl_file: 'kibana-{{ kibana_ver }}-linux-x86_64.tar.gz'
-    kibana_url: 'https://artifacts.elastic.co/downloads/kibanaa'
+    kibana_url: 'https://artifacts.elastic.co/downloads/kibana'
   tasks:
     - name: Updating APK Cache
       apk:
